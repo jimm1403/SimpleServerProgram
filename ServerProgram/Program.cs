@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using System.Net.Sockets;
 using System.Net;
@@ -50,16 +47,7 @@ namespace ServerProgram
         internal void ClientHandler(NetworkStream NWS, StreamReader sr, StreamWriter sw, IPEndPoint remoteIp)
         {
             bool run = true;
-            //NetworkStream stream = new NetworkStream(clientSocket.Client);      //Kablet/røret fra server til client.
-            //StreamReader sr = new StreamReader(stream);                         //Står for at læse hvad der kommer fra clienten.
-            //StreamWriter sw = new StreamWriter(stream);      //Står for at skrive til clienten.
             
-            //IPEndPoint localIp = (IPEndPoint)clientSocket.Client.LocalEndPoint;
-
-            //if (remoteIp != null)
-            //{
-            //    Console.WriteLine("IP and Port connected: " + remoteIp.Address + ":" + remoteIp.Port);
-            //}
             while (run)
             {
                 try
@@ -70,12 +58,6 @@ namespace ServerProgram
                     string[] message = sr.ReadLine().Split(' ');        //splitter modtaget string op i dele.
                     message[0] = message[0].ToLower();
 
-                    //if (!clientSocket.Client.Connected)
-                    //{
-                    //    run = false;
-                    //    break;
-                    //}
-
                     if (message[0] == "time")
                     {
                         sw.WriteLine("The time right now is " + DateTime.Now.Hour + ":" +
@@ -85,6 +67,12 @@ namespace ServerProgram
                     {
                         sw.WriteLine("The date today is " + DateTime.Today.Day + "-" +
                             DateTime.Today.Month + "-" + DateTime.Today.Year);
+                    }
+
+                    else if (message[0]=="game")
+                    {
+                        Guessing(sw, sr);
+
                     }
                     else if (message[0] == "add")
                     {
@@ -104,25 +92,58 @@ namespace ServerProgram
                         sw.WriteLine("Unknown command");
                     }
                     sw.Flush();
-                    
+
+                    string messageReceived = remoteIp + ": Command >>";
                     for (int i = 0; i < message.Length; i++)
                     {
-                        Console.WriteLine(remoteIp + ": Command >> " + message[i]);
-                        if (message[0] == "exit")
-                        {
-                            Console.WriteLine("Client disconnected");
-                        }
+                        messageReceived += " " + message[i];
+                        
+                    }
+                    if (message[0] == "exit")
+                    {
+                        Console.WriteLine(remoteIp + ": Command >> " + message[0]);
+                        Console.WriteLine("Client disconnected");
+                    }
+                    else
+                    {
+                        Console.WriteLine(messageReceived);
                     }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Ups...");
                     Console.WriteLine(e);
-                    //sw.WriteLine("Der er sket en fejl på serveren :(");
-                    //sw.Flush();
+                    run = false;
                 }
             }
             thread.Abort();
+        }
+
+
+
+        public void Guessing(StreamWriter sw, StreamReader sr)
+        {
+            Random rNm = new Random();
+            int number = rNm.Next(1, 10);
+
+            sw.WriteLine("Guess a number from 1 to 9");
+            sw.Flush();
+
+            while (true)
+            {
+                
+                if (number == int.Parse(sr.ReadLine()))
+                {
+                    sw.WriteLine("Correct!");
+                    sw.Flush();
+                }
+                else
+                {
+                    sw.WriteLine("Guess again loser!");
+                    sw.Flush();
+                }
+            }
+            
         }
     }
 }
